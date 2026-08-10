@@ -450,8 +450,7 @@ def test_nonstop_dual_uses_test_trial_filter():
 def test_stop_dual_go_restricted_omission():
     df = _stop_dual_df()
     masks = define_nuisance_trials(df, "stopSignalWFlanker")
-    # successful stop (row 2, key_press == -1) must NOT be an omission (not a 
-go trial)
+    # successful stop (row 2, key_press == -1) must NOT be an omission (not a go trial)
     assert masks["omission"].tolist() == [False, False, False, False]
     assert masks["commission"].tolist() == [False, False, False, False]
 
