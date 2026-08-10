@@ -331,8 +331,7 @@ class TestPreprocessEvents:
                     30.0,
                     40.0,
                     50.0,
-                ],  # Use larger onsets to avoid negative after dummy 
-adjustment
+                ],  # Use larger onsets to avoid negative after dummy adjustment
                 "response_time": [0.5, -1.0, 0.7, -999],
                 "trial_id": ["test_trial"] * 4,
                 "trial_type": [
@@ -409,10 +408,8 @@ class TestDefineNuisanceTrials:
         nuisance_masks = define_nuisance_trials(events_data, "stopSignal")
 
         # For stop-signal, trial_mask should be 'go' trials only
-        assert nuisance_masks["omission"].sum() == 0  # No omissions in go 
-trials
-        assert nuisance_masks["commission"].iloc[3]  # Wrong response in go 
-trial
+        assert nuisance_masks["omission"].sum() == 0  # No omissions in go trials
+        assert nuisance_masks["commission"].iloc[3]  # Wrong response in go trial
         assert nuisance_masks["rt_too_fast"].iloc[1]  # Fast RT in go trial
 
 
