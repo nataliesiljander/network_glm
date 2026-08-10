@@ -30,6 +30,7 @@ from network_glm.lev1.processing.events import (
     preprocess_events,
     save_simplified_events,
     stop_fail_violation,
+    add_ssd_regressor,
 )
 from network_glm.lev1.processing.fixed_effects import compute_subject_fixed_effects
 from network_glm.lev1.processing.glm import (
@@ -396,6 +397,8 @@ def process_single_run(
     task_name_norm = (args.task_name or "").strip().lower()
     if task_name_norm in ("stopsignal", "stop_signal"):
         processed_events_with_junk = stop_fail_violation(processed_events_with_junk)
+        if getattr(args, "add_ssd_regressor", False):
+            processed_events_with_junk = add_ssd_regressor(processed_events_with_junk)
 
     # Load confounds. BOLD is pre-trimmed by scripts/trim_bold.py and fMRIPrep
     # is run with --dummy-scans 0, so the confounds TSV already matches the

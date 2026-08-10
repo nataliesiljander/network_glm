@@ -182,6 +182,13 @@ def get_parser() -> argparse.ArgumentParser:
         default=False,
         help="Enable debug logging",
     )
+    parser.add_argument(
+        "--add-ssd-regressor",
+        action="store_true",
+        default=False,
+        help="Add demeaned stop-signal-delay regressors (output_all and output_sf)"
+        "to stopSignal task events. No effect on other tasks",
+    )
     return parser
 
 
