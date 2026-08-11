@@ -390,6 +390,9 @@ def stop_fail_violation(
         prev_test_label = label
 
     n_violations = len(amplitudes)
+    logger.info(
+        "stop_fail_violation: run produced %d defined violation(s)", n_violations,
+    )
     if n_violations == 0:
         logger.info(
             "stop_fail_violation: run produced zero defined violations; '%s' is all NaN",
