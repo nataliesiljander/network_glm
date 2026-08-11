@@ -296,31 +296,39 @@ def stop_fail_violation(
     Add a per-run column with the violation amplitude for stop_failure trials
     For each stop_failure trial:
       amplitude = stop_failure_rt of trial N - valid_go_rt of trial N-1
+
+    Note: If a run produces 0 or 1 defined violations, no regressor is produced
+    (the column is left all NaN) and the corresponding contrast is dropped at the
+    design-matrix stage (handle_zero_variance_columns/filter_contrasts_for_dropped_columns)
+    -- a run with too few violations silently loses this contrast instead of erroring.
+
+    Scope note: task-name gating for this regressor (in runner.py) currently
+    matches only "stopsignal"/"stop_signal" and does not extend to the dual
+    tasks (e.g. stopSignalWFlanker).
     """
     df = events.copy()
 
-    sorted_view = df.sort_values("onset")
-    sorted_view["rt_num"] = pd.to_numeric(df[rt], errors="coerce")
+    df["rt_num"] = pd.to_numeric(df[rt], errors="coerce")
+    order = list(df.sort_values("onset"))
 
     # result Series indexed like the original and filled with NaN
     result = pd.Series(np.nan, index=df.index, dtype=float)
 
-    def check_if_test_trial(idx: int) -> bool:
+    def check_if_test_trial(label) -> bool:
         # Returns true if the row is a test_trial and false if it is a test_fixation or na/n
-        if idx < 0 or idx >= len(sorted_view):
+        if label is None or label not in df.index:
             return False
-
-        val = sorted_view.at[idx, trial_id]
+        val = df.at[label, trial_id]
         return val == "test_trial"
 
-    def prev_is_valid_go(prev_idx: int) -> bool:
-        if prev_idx < 0 or prev_idx >= len(sorted_view):  # bounds check
+    def prev_is_valid_go(prev_label) -> bool:
+        if prev_label is None or prev_label not in df.index:
             return False
 
-        if sorted_view.at[prev_idx, trial_type] != go:  # check if prev test_trial is go
+        if df.at[prev_label, trial_type] != go:  # check if prev test_trial is go
             return False
 
-        prev_rt = sorted_view.at[prev_idx, "rt_num"]  # RT invalid if -1 or NaN
+        prev_rt = df.at[prev_label, "rt_num"]  # RT invalid if -1 or NaN
         if pd.isna(prev_rt):
             return False
         if prev_rt == -1:  # omission
@@ -328,14 +336,14 @@ def stop_fail_violation(
         if prev_rt < MIN_RT:  # too fast
             return False
 
-        if ("key_press" in sorted_view.columns) and (
-            "correct_response" in sorted_view.columns
+        if ("key_press" in df.columns) and (
+            "correct_response" in df.columns
         ):  # checks go_acc
             key_press = pd.to_numeric(
-                sorted_view.at[prev_idx, "key_press"], errors="coerce"
+                df.at[prev_label, "key_press"], errors="coerce"
             )
             correct_resp = pd.to_numeric(
-                sorted_view.at[prev_idx, "correct_response"], errors="coerce"
+                df.at[prev_label, "correct_response"], errors="coerce"
             )
             if key_press != correct_resp:
                 return False
@@ -343,12 +351,12 @@ def stop_fail_violation(
         return True
 
     amplitudes = []
-    amp_indices = []
-    prev_test_idx = None
+    amp_labels = []
+    prev_test_label = None
 
-    for idx in range(len(sorted_view)):
-        if trial_id and trial_id in sorted_view.columns:
-            if not check_if_test_trial(idx):  # skips non_test trials
+    for label in order:
+        if trial_id and trial_id in df.columns:
+            if not check_if_test_trial(label):  # skips non_test trials
                 continue
         else:
             logger.warning(
@@ -356,30 +364,30 @@ def stop_fail_violation(
             )
             continue
 
-        cur_trial_type = sorted_view.at[idx, trial_type]
+        cur_trial_type = df.at[label, trial_type]
 
         if cur_trial_type == "stop_failure":
-            if prev_test_idx is None:  # no previous test trial to pair with
-                prev_test_idx = idx
+            if prev_test_label is None:  # no previous test trial to pair with
+                prev_test_label = label
                 continue
 
-            cur_rt = sorted_view.at[idx, "rt_num"]
+            cur_rt = df.at[label, "rt_num"]
             if pd.isna(cur_rt):
-                prev_test_idx = idx
+                prev_test_label = label
                 continue
             if cur_rt == -1:
-                prev_test_idx = idx
+                prev_test_label = label
                 continue
             if cur_rt < MIN_RT:
-                prev_test_idx = idx
+                prev_test_label = label
                 continue
 
-            if prev_is_valid_go(prev_test_idx):
-                prev_rt_val = sorted_view.at[prev_test_idx, "rt_num"]
+            if prev_is_valid_go(prev_test_label):
+                prev_rt_val = df.at[prev_test_label, "rt_num"]
                 amp = float(cur_rt) - float(prev_rt_val)
                 amplitudes.append(amp)
-                amp_indices.append(idx)
-        prev_test_idx = idx
+                amp_labels.append(label)
+        prev_test_label = label
 
     n_violations = len(amplitudes)
     if n_violations == 0:
@@ -395,14 +403,11 @@ def stop_fail_violation(
     else:
         mean_amp = float(np.mean(amplitudes))
         centered = [each - mean_amp for each in amplitudes]
-        for i, v in zip(amp_indices, centered):
-            result.at[i, output] = v
+        for label, v in zip(amp_labels, centered):
+            result.at[label] = v
 
     df[output] = result
-
-    if "rt_num" in sorted_view.columns:
-        sorted_view = sorted_view.drop(columns=["rt_num"])
-
+    df = df.drop(columns=["rt_num"])
     return df
 
 
