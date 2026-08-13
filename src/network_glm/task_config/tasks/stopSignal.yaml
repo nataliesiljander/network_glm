@@ -80,10 +80,10 @@ regressors:
   ssd_all:
     amplitude: ssd_all
     duration: 1
-    subset: "trial_type.startswith('stop')"
+    subset: null
 
   ssd_stop_fail:
-    amplitude: ssd_sf
+    amplitude: ssd_stop_fail
     duration: 1
     subset: "trial_type == 'stop_failure'"
 
@@ -95,7 +95,7 @@ contrasts:
   stop_failure-go: "stop_failure - go"
   stop_success-stop_failure: "stop_success - stop_failure"
   stop_failure-stop_success: "stop_failure - stop_success"
-  stop_failure_violation: "stop_failure_violation"
+  stop_fail_violation: "stop_fail_violation"
   task-baseline: "1/3 * go + 1/3 * stop_failure + 1/3 * stop_success"
   response_time: "response_time"
   ssd_all: "ssd_all"

@@ -309,7 +309,7 @@ def stop_fail_violation(
     df = events.copy()
 
     df["rt_num"] = pd.to_numeric(df[rt], errors="coerce")
-    order = list(df.sort_values("onset"))
+    order = list(df.sort_values("onset").index)
 
     # result Series indexed like the original and filled with NaN
     result = pd.Series(np.nan, index=df.index, dtype=float)
