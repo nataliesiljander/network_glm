@@ -313,7 +313,7 @@ def test_inhibition_rtdur_subset_excludes_failure_trials():
     Mumford correction. This invariant is enforced at the YAML config
     level via the subset filter.
     """
-    for task_name in ("goNogo"):
+    for task_name in ("goNogo",):
         config = get_regressor_config(task_name)
         rt_subset = config["response_time"]["subset"]
         # The subset must restrict to trial_type == 'go'. The most common
