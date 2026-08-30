@@ -8,21 +8,9 @@ expected_sessions: 5
 # Nuisance regressors (omission, commission, rt_fast) are computed
 # only for go trials (see define_nuisance_trials).
 #
-# RT modeling — Mumford 2023 ConstDurRTDur (biorxiv 528677):
-# We include a pooled response_time (RTDur) regressor restricted to
-# correct go-trial responses only. Subject pool:
-#   - go (correct, RT >= 0.2):           ConstDur + RTDur ✓
-#   - stop_success (no response):        ConstDur only (no meaningful RT)
-#   - stop_failure (commission error):   ConstDur only (RTs are contaminated
-#                                        — failed inhibition produces
-#                                        atypical, slower-than-normal RTs
-#                                        driven by partial response programming;
-#                                        modeling them as RT-modulated would
-#                                        bleed inhibition-failure variance
-#                                        into the cognitive contrasts).
-# This keeps stop_success-go and stop_failure-go from absorbing RT variance
-# via the go regressor (the Mumford paradox) while avoiding RT modeling
-# on trials whose RT is not a clean motor-readiness signal.
+# NOTE: Response time regressor removed due to sever collinearity 
+# with go, which was inflating VIF on stop_success - go and 
+# stop_failure - go.
 
 regressors:
   go:
@@ -47,14 +35,6 @@ regressors:
     amplitude: 1
     duration: 1
     subset: "trial_type == 'stop_failure'"
-
-  response_time:
-    amplitude: 1
-    duration: response_time
-    subset: >-
-      trial_id == 'test_trial' and
-      key_press == correct_response and response_time >= 0.2
-      and trial_type == 'go'
 
   go_omission:
     amplitude: omission
@@ -97,6 +77,5 @@ contrasts:
   stop_failure-stop_success: "stop_failure - stop_success"
   stop_fail_violation: "stop_fail_violation"
   task-baseline: "1/3 * go + 1/3 * stop_failure + 1/3 * stop_success"
-  response_time: "response_time"
   ssd_all: "ssd_all"
   ssd_stop_fail: "ssd_stop_fail"
