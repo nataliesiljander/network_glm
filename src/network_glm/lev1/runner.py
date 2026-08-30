@@ -363,6 +363,7 @@ def process_single_run(session, run, run_files, args, sample_type, dirs, task_pa
     #does not extend to the dual tasks
     if task_name_norm in ("stopsignal", "stop_signal"):
         processed_events_with_junk = stop_fail_violation(processed_events_with_junk)
+        processed_events_with_junk = add_ssd_regressor(processed_events_with_junk)
 
     # Load confounds. BOLD is pre-trimmed by scripts/trim_bold.py and fMRIPrep
     # is run with --dummy-scans 0, so the confounds TSV already matches the
