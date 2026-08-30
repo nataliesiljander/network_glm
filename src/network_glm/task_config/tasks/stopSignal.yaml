@@ -57,6 +57,11 @@ regressors:
     subset: "trial_id == 'break_with_performance_feedback'"
     events_query_min_coverage: 0.0
 
+  ssd_stop_fail:
+    amplitude: ssd_stop_fail
+    duration: 1
+    subset: "trial_type == 'stop_failure'"
+
 contrasts:
   go: "go"
   stop_success: "stop_success"
@@ -67,3 +72,4 @@ contrasts:
   stop_failure-stop_success: "stop_failure - stop_success"
   stop_fail_violation: "stop_fail_violation"
   task-baseline: "1/3 * go + 1/3 * stop_failure + 1/3 * stop_success"
+  ssd_stop_fail: "ssd_stop_fail"
