@@ -212,6 +212,54 @@ def add_junk_trials(
 
     return events_df, junk_percentage
 
+def add_ssd_regressor(
+        events: pd.DataFrame,
+        ssd_col: str = "SS_delay",
+        ssd_sf: str = "ssd_stop_fail",
+) -> pd.DataFrame:
+    """
+    Adds a per-run ssd regressor for stop_failure trials:
+    - output_sf: demeaned SSD on stop_failure trials only
+    """
+    df = events.copy()
+
+    if ssd_col not in df.columns:
+        logger.warning(
+            "ssd_regressor: no SS_delay column '%s' found; creating '%s' as all-NaN",
+            ssd_col, ssd_sf,
+        )
+        df[ssd_sf] = np.nan
+
+        return df
+
+    df["ssd_num"] = pd.to_numeric(df[ssd_col], errors = "coerce")  #numeric SSD
+
+    if "trial_type" in df.columns:
+        # stop failures taking into account the stop dual tasks
+        sf_mask = df["trial_type"].astype(str).str.startswith("stop_failure")
+    else:
+        logger.warning("ssd_regressor: no 'trial_type' column found; not adding SSD regressor")
+        df[ssd_sf] = np.nan
+        df.drop(columns=["ssd_num"], inplace=True)
+        return df
+
+    #ssd_sf
+    ssd_sf_vals = df.loc[sf_mask, "ssd_num"]
+    if ssd_sf_vals.notna().sum() == 1:    #
+        logger.warning(
+            "ssd_sf: run produced one defined ssd, after centering it would be 0.0 and dropped downstream. Leaving all '%s' NaN",
+            ssd_sf,
+        )
+    if ssd_sf_vals.notna().sum() > 1:
+        mean_sf = ssd_sf_vals.mean(skipna=True)
+        df[ssd_sf] = np.where(sf_mask, df["ssd_num"] - mean_sf, np.nan)
+    else:
+        df[ssd_sf] = np.nan
+        logger.debug("ssd_regressor: no numeric SS_delay values on stop_failure trials; '%s' all NaN", ssd_sf)
+
+    df.drop(columns = ["ssd_num"], inplace=True)
+
+    return df
 
 def stop_fail_violation(
     events: pd.DataFrame,
